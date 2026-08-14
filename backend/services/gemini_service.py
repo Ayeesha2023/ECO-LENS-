@@ -1,31 +1,104 @@
+import json
+import os
+from typing import Any
+
+from dotenv import load_dotenv
 from google import genai
 
-from config import Config
+
+load_dotenv()
 
 
-def test_gemini_connection() -> str:
-    """Send a harmless connection test to Gemini."""
+DEFAULT_MODEL = os.getenv(
+    "GEMINI_MODEL",
+    "gemini-3.6-flash",
+)
 
-    if not Config.GEMINI_API_KEY:
+
+def _get_api_key() -> str:
+    """Return the configured Gemini API key."""
+
+    api_key = os.getenv(
+        "GEMINI_API_KEY",
+        "",
+    ).strip()
+
+    if not api_key:
+        raise RuntimeError(
+            "GEMINI_API_KEY is missing from .env."
+        )
+
+    return api_key
+
+
+def generate_grounded_json(
+    prompt: str,
+    json_schema: dict[str, Any] | None = None,
+    model: str | None = None,
+) -> dict[str, Any]:
+    """
+    Send a grounded ECO-LENS prompt to Gemini.
+
+    Gemini is expected to use the RAG context provided
+    inside the prompt rather than inventing missing facts.
+    """
+
+    if not isinstance(prompt, str):
+        raise TypeError(
+            "prompt must be a string."
+        )
+
+    prompt = prompt.strip()
+
+    if not prompt:
         raise ValueError(
-            "GEMINI_API_KEY is missing from backend/.env"
+            "prompt cannot be empty."
         )
 
     client = genai.Client(
-        api_key=Config.GEMINI_API_KEY
+        api_key=_get_api_key()
     )
 
-    response = client.models.generate_content(
-        model=Config.GEMINI_MODEL,
-        contents=(
-            "Reply with exactly: "
-            "ECO-LENS Gemini connection successful"
-        ),
+    model_name = (
+        model
+        or DEFAULT_MODEL
     )
 
-    if not response.text:
+    response_format: dict[str, Any] = {
+        "type": "text",
+        "mime_type": "application/json",
+    }
+
+    if json_schema is not None:
+        response_format["schema"] = (
+            json_schema
+        )
+
+    interaction = client.interactions.create(
+        model=model_name,
+        input=prompt,
+        response_format=response_format,
+    )
+
+    raw_text = interaction.output_text
+
+    if not raw_text:
         raise RuntimeError(
             "Gemini returned an empty response."
         )
 
-    return response.text.strip()
+    try:
+        parsed = json.loads(raw_text)
+
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(
+            "Gemini did not return valid JSON."
+        ) from exc
+
+    if not isinstance(parsed, dict):
+        raise RuntimeError(
+            "Gemini response must be "
+            "a JSON object."
+        )
+
+    return parsed

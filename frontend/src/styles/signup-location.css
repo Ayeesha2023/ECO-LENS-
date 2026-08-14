@@ -1,0 +1,402 @@
+/* ==========================================================
+   ECO-LENS SIGNUP LOCATION UI
+   Household area dropdown + Authority ward selector
+   ========================================================== */
+
+
+/* ==========================================================
+   HOUSEHOLD AREA DROPDOWN
+   ========================================================== */
+
+.location-select {
+  width: 100%;
+  height: 54px;
+
+  padding: 0 46px 0 16px;
+
+  border: 1px solid rgba(8, 67, 42, 0.14);
+  border-radius: 14px;
+
+  outline: none;
+
+  background-color: rgba(250, 253, 250, 0.95);
+
+  color: var(--signup-dark);
+
+  font-family: inherit;
+  font-size: 14px;
+
+  cursor: pointer;
+
+  appearance: none;
+
+  background-image:
+    linear-gradient(
+      45deg,
+      transparent 50%,
+      #17633f 50%
+    ),
+    linear-gradient(
+      135deg,
+      #17633f 50%,
+      transparent 50%
+    );
+
+  background-position:
+    calc(100% - 21px) 24px,
+    calc(100% - 16px) 24px;
+
+  background-size:
+    5px 5px,
+    5px 5px;
+
+  background-repeat: no-repeat;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
+}
+
+
+.location-select:hover {
+  border-color: rgba(90, 151, 47, 0.35);
+}
+
+
+.location-select:focus {
+  border-color: rgba(88, 150, 45, 0.6);
+
+  background-color: #ffffff;
+
+  box-shadow:
+    0 0 0 4px rgba(101, 159, 39, 0.08);
+}
+
+
+.location-select:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+
+.location-help {
+  display: block;
+
+  margin-top: 7px;
+
+  color: #72867c;
+
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+
+/* ==========================================================
+   AUTHORITY WARD SECTION
+   ========================================================== */
+
+.ward-selection-grid {
+  width: 100%;
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 14px;
+
+  margin-top: 8px;
+}
+
+
+/* ==========================================================
+   INDIVIDUAL WARD CARD
+   ========================================================== */
+
+.ward-option {
+  position: relative;
+
+  width: 100%;
+  min-height: 138px;
+
+  display: flex;
+
+  align-items: flex-start;
+
+  gap: 14px;
+
+  padding: 20px;
+
+  border: 1px solid rgba(8, 67, 42, 0.13);
+
+  border-radius: 20px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.96),
+      rgba(248, 252, 248, 0.92)
+    );
+
+  cursor: pointer;
+
+  overflow: hidden;
+
+  transition:
+    transform 0.22s ease,
+    border-color 0.22s ease,
+    box-shadow 0.22s ease,
+    background 0.22s ease;
+}
+
+
+.ward-option:hover {
+  transform: translateY(-3px);
+
+  border-color: rgba(89, 150, 46, 0.3);
+
+  box-shadow:
+    0 12px 30px rgba(14, 79, 46, 0.08);
+}
+
+
+.ward-option-selected {
+  border-color: rgba(91, 153, 45, 0.56);
+
+  background:
+    linear-gradient(
+      145deg,
+      #ffffff,
+      #edf8ee
+    );
+
+  box-shadow:
+    0 14px 34px rgba(30, 98, 51, 0.1);
+}
+
+
+/* ==========================================================
+   IMPORTANT CHECKBOX FIX
+   Overrides .form-field input from signup.css
+   ========================================================== */
+
+.ward-option input[type="checkbox"] {
+  appearance: none;
+
+  width: 22px !important;
+  height: 22px !important;
+
+  min-width: 22px !important;
+  min-height: 22px !important;
+
+  flex: 0 0 22px;
+
+  margin: 2px 0 0 0 !important;
+
+  padding: 0 !important;
+
+  border: 1.5px solid rgba(17, 94, 56, 0.35) !important;
+
+  border-radius: 7px !important;
+
+  background: #ffffff !important;
+
+  box-shadow: none !important;
+
+  cursor: pointer;
+
+  position: relative;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+
+.ward-option input[type="checkbox"]:hover {
+  border-color: #659f27 !important;
+}
+
+
+.ward-option input[type="checkbox"]:checked {
+  border-color: #17633f !important;
+
+  background:
+    linear-gradient(
+      135deg,
+      #17633f,
+      #659f27
+    ) !important;
+}
+
+
+.ward-option input[type="checkbox"]:checked::after {
+  content: "✓";
+
+  position: absolute;
+
+  inset: 0;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  color: white;
+
+  font-size: 13px;
+  font-weight: 900;
+}
+
+
+/* ==========================================================
+   WARD INFORMATION
+   ========================================================== */
+
+.ward-option > div {
+  flex: 1;
+
+  min-width: 0;
+}
+
+
+.ward-option strong {
+  display: block;
+
+  margin: 0;
+
+  color: #082f23;
+
+  font-size: 16px;
+  font-weight: 800;
+
+  letter-spacing: -0.02em;
+}
+
+
+.ward-option div > span {
+  display: inline-block;
+
+  margin-top: 5px;
+
+  padding: 4px 9px;
+
+  border-radius: 999px;
+
+  background: #edf7e8;
+
+  color: #5f9828;
+
+  font-size: 11px;
+  font-weight: 800;
+}
+
+
+.ward-option p {
+  margin: 11px 0 0;
+
+  color: #62766c;
+
+  font-size: 13px;
+
+  line-height: 1.6;
+
+  word-break: normal;
+  overflow-wrap: break-word;
+}
+
+
+/* Hide second visual check because checkbox itself
+   now already shows the selected state cleanly. */
+
+.ward-check {
+  display: none;
+}
+
+
+/* ==========================================================
+   SELECTED CARD ACCENT
+   ========================================================== */
+
+.ward-option-selected::after {
+  content: "";
+
+  position: absolute;
+
+  top: 0;
+  left: 0;
+
+  width: 4px;
+  height: 100%;
+
+  background:
+    linear-gradient(
+      180deg,
+      #17633f,
+      #78ad34
+    );
+}
+
+
+/* ==========================================================
+   LOADING STATE
+   ========================================================== */
+
+.ward-loading {
+  grid-column: 1 / -1;
+
+  padding: 24px;
+
+  border: 1px dashed rgba(8, 67, 42, 0.18);
+
+  border-radius: 16px;
+
+  background: rgba(250, 253, 250, 0.7);
+
+  color: #70847a;
+
+  text-align: center;
+
+  font-size: 13px;
+}
+
+
+/* ==========================================================
+   RESPONSIVE
+   ========================================================== */
+
+@media (max-width: 800px) {
+
+  .ward-selection-grid {
+    grid-template-columns: 1fr;
+  }
+
+
+  .ward-option {
+    min-height: auto;
+
+    padding: 18px;
+  }
+}
+
+
+@media (max-width: 520px) {
+
+  .ward-option {
+    border-radius: 17px;
+
+    padding: 16px;
+  }
+
+
+  .ward-option strong {
+    font-size: 15px;
+  }
+
+
+  .ward-option p {
+    font-size: 12px;
+  }
+}
