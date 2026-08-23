@@ -14,24 +14,24 @@ import SignupPage
 import LoginPage
   from "./pages/LoginPage";
 
-import AccountHomePage
-  from "./pages/AccountHomePage";
+import HouseholdDashboard
+  from "./pages/HouseholdDashboard";
+
+import EmployeeDashboard
+  from "./pages/EmployeeDashboard";
+
+import AuthorityDashboard
+  from "./pages/AuthorityDashboard";
 
 
 function App() {
-
   return (
-
     <BrowserRouter>
-
       <Routes>
 
-
         {/* WELCOME */}
-
         <Route
           path="/"
-
           element={
             <WelcomePage />
           }
@@ -39,10 +39,8 @@ function App() {
 
 
         {/* SIGNUP */}
-
         <Route
           path="/signup"
-
           element={
             <SignupPage />
           }
@@ -50,60 +48,44 @@ function App() {
 
 
         {/* LOGIN */}
-
         <Route
           path="/login"
-
           element={
             <LoginPage />
           }
         />
 
 
-        {/* TEMP HOUSEHOLD HOME */}
-
+        {/* HOUSEHOLD DASHBOARD */}
         <Route
           path="/household"
-
           element={
-            <AccountHomePage
-              expectedRole="household"
-            />
+            <HouseholdDashboard />
           }
         />
 
 
-        {/* TEMP EMPLOYEE HOME */}
-
+        {/* MUNICIPAL EMPLOYEE DASHBOARD */}
         <Route
           path="/employee"
-
           element={
-            <AccountHomePage
-              expectedRole="employee"
-            />
+            <EmployeeDashboard />
           }
         />
 
 
-        {/* TEMP AUTHORITY HOME */}
-
+        {/* COMMUNITY AUTHORITY DASHBOARD */}
         <Route
           path="/authority"
-
           element={
-            <AccountHomePage
-              expectedRole="community_authority"
-            />
+            <AuthorityDashboard />
           }
         />
 
 
         {/* UNKNOWN ROUTE */}
-
         <Route
           path="*"
-
           element={
             <Navigate
               to="/"
@@ -112,9 +94,7 @@ function App() {
           }
         />
 
-
       </Routes>
-
     </BrowserRouter>
   );
 }

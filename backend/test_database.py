@@ -1,39 +1,44 @@
-import os
-from dotenv import load_dotenv
-import mysql.connector
+from db import fetch_all, fetch_one
 
-load_dotenv()
 
-try:
-    conn = mysql.connector.connect(
-        host=os.getenv("DB_HOST"),
-        port=int(os.getenv("DB_PORT")),
-        user=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASSWORD"),
-        database=os.getenv("DB_NAME")
+def main() -> None:
+    database = fetch_one("SELECT DATABASE() AS database_name")
+
+    print("Connected database:", database["database_name"])
+
+    rules = fetch_all(
+        """
+        SELECT
+            rule_code,
+            title,
+            priority
+        FROM authority_advice_rules
+        WHERE is_active = 1
+        ORDER BY advice_rule_id
+        """
     )
 
-    print("="*50)
-    print("DATABASE CONNECTED SUCCESSFULLY")
-    print("="*50)
+    print("\nAuthority advice rules:")
 
-    cursor = conn.cursor()
+    for rule in rules:
+        print(
+            f"- {rule['rule_code']} | "
+            f"{rule['title']} | "
+            f"{rule['priority']}"
+        )
 
-    cursor.execute("SELECT DATABASE();")
-    print("Current Database:", cursor.fetchone()[0])
+    verified_count = fetch_one(
+        """
+        SELECT COUNT(*) AS total
+        FROM v_verified_authority_rag_knowledge
+        """
+    )
 
-    cursor.execute("SELECT COUNT(*) FROM users;")
-    print("Users:", cursor.fetchone()[0])
+    print(
+        "\nVerified authority knowledge:",
+        verified_count["total"],
+    )
 
-    cursor.execute("SELECT COUNT(*) FROM waste_categories;")
-    print("Waste Categories:", cursor.fetchone()[0])
 
-    cursor.execute("SELECT COUNT(*) FROM bd_rag_knowledge;")
-    print("Knowledge Records:", cursor.fetchone()[0])
-
-    cursor.close()
-    conn.close()
-
-except Exception as e:
-    print("Connection Failed")
-    print(e)
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,148 @@
+.authority-employee-tools {
+  margin-bottom: 22px;
+}
+
+.authority-tool-grid {
+  display: grid;
+  grid-template-columns: minmax(0,1.1fr) minmax(0,.9fr);
+  gap: 15px;
+  margin-bottom: 18px;
+}
+
+.authority-tool-card {
+  padding: 20px;
+  border: 1px solid rgba(7,59,42,.12);
+  border-radius: 18px;
+  background: #fff;
+}
+
+.authority-tool-card h3 {
+  margin: 5px 0 6px;
+  color: #073b2a;
+}
+
+.authority-tool-card p {
+  margin: 0 0 14px;
+  color: #6f8177;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.authority-tool-eyebrow {
+  color: #7ea833;
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: .12em;
+}
+
+.authority-invite-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr .7fr auto;
+  gap: 8px;
+}
+
+.authority-invite-form input {
+  height: 40px;
+  padding: 0 10px;
+  border: 1px solid rgba(7,59,42,.12);
+  border-radius: 10px;
+  color: #073b2a;
+}
+
+.authority-invite-result {
+  margin-top: 12px;
+  padding: 13px;
+  border-radius: 11px;
+  background: #eef7ef;
+}
+
+.authority-invite-code {
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 9px;
+}
+
+.authority-invite-code code {
+  font-size: 13px;
+  font-weight: 800;
+  color: #17633f;
+  word-break: break-all;
+}
+
+.authority-invite-list,
+.authority-cleanup-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.authority-invite-item,
+.authority-cleanup-item {
+  padding: 12px;
+  border: 1px solid rgba(7,59,42,.1);
+  border-radius: 12px;
+  background: #fafcf9;
+}
+
+.authority-invite-item-top,
+.authority-cleanup-item-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.authority-invite-item span,
+.authority-cleanup-item span {
+  color: #6f8177;
+  font-size: 10px;
+}
+
+.authority-tool-status {
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: #eef7ef;
+  color: #17633f !important;
+  font-weight: 800;
+}
+
+.authority-cleanup-breakdown {
+  margin: 10px 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.authority-cleanup-breakdown span {
+  padding: 6px 8px;
+  border-radius: 999px;
+  background: #eef7ef;
+  color: #17633f;
+  font-weight: 700;
+}
+
+.authority-cleanup-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.authority-tool-message {
+  margin-top: 8px;
+  color: #17633f;
+  font-size: 10px;
+}
+
+.authority-tool-error {
+  margin-top: 8px;
+  color: #a73b3b;
+  font-size: 10px;
+}
+
+@media (max-width: 900px) {
+  .authority-tool-grid,
+  .authority-invite-form {
+    grid-template-columns: 1fr;
+  }
+}

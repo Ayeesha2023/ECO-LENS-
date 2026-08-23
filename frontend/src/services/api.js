@@ -1,4 +1,4 @@
-export const API_BASE_URL =
+const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ||
   "http://localhost:5000";
 
@@ -7,62 +7,114 @@ export async function apiRequest(
   path,
   options = {}
 ) {
+  const isFormData =
+    typeof FormData !== "undefined" &&
+    options.body instanceof FormData;
 
-  const response = await fetch(
-    `${API_BASE_URL}${path}`,
-    {
-
-      ...options,
-
-      credentials: "include",
-
-      headers: {
-
-        "Content-Type":
-          "application/json",
-
-        ...(options.headers || {}),
-      },
-    }
-  );
+  const headers = {
+    ...(options.headers || {}),
+  };
 
 
-  let data;
+  // ========================================================
+  // CONTENT TYPE
+  // ========================================================
+  //
+  // For normal JSON requests:
+  //     Content-Type = application/json
+  //
+  // For image/FormData requests:
+  //     DO NOT manually set Content-Type.
+  //
+  // The browser automatically creates the multipart boundary.
+  // ========================================================
+
+  if (
+    options.body !== undefined &&
+    options.body !== null &&
+    !isFormData &&
+    !headers["Content-Type"]
+  ) {
+    headers["Content-Type"] =
+      "application/json";
+  }
 
 
-  try {
+  // ========================================================
+  // REQUEST
+  // ========================================================
 
-    data =
+  const response =
+    await fetch(
+      `${API_BASE_URL}${path}`,
+      {
+        ...options,
+
+        // Required because EcoLens uses
+        // Flask session cookies.
+        credentials: "include",
+
+        headers,
+      }
+    );
+
+
+  // ========================================================
+  // RESPONSE
+  // ========================================================
+
+  const contentType =
+    response.headers.get(
+      "content-type"
+    ) || "";
+
+  let payload;
+
+
+  if (
+    contentType.includes(
+      "application/json"
+    )
+  ) {
+    payload =
       await response.json();
+  } else {
+    const text =
+      await response.text();
 
-  } catch {
-
-    data = {
-
-      success: false,
-
-      error:
-        "The server returned an invalid response.",
+    payload = {
+      success: response.ok,
+      message: text,
     };
   }
 
 
-  if (!response.ok) {
+  // ========================================================
+  // ERROR
+  // ========================================================
 
+  if (!response.ok) {
     const error =
       new Error(
-        data.error ||
-        "The request could not be completed."
+        payload?.error ||
+        payload?.message ||
+        "Request failed."
       );
-
 
     error.status =
       response.status;
 
+    error.data =
+      payload;
 
     throw error;
   }
 
 
-  return data;
+  return payload;
 }
+
+
+export {
+  API_BASE_URL,
+};
