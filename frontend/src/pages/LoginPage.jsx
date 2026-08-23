@@ -38,6 +38,13 @@ const loginRoles = [
     title: "Community Authority",
     subtitle: "Community management",
   },
+
+  {
+    id: "admin",
+    icon: "A",
+    title: "Administrator",
+    subtitle: "Authority registration control",
+  },
 ];
 
 
@@ -464,9 +471,25 @@ function LoginPage() {
 
               <div className="login-info-box">
 
-                Community Authority
-                accounts must be approved
-                before they can sign in.
+                Community Authority accounts
+                require an administrator-issued
+                registration code linked to the
+                organization name used at signup.
+
+              </div>
+
+            )}
+
+
+            {selectedRole ===
+              "admin" && (
+
+              <div className="login-info-box">
+
+                Administrator accounts are
+                created directly for EcoLens
+                management and do not use the
+                public signup form.
 
               </div>
 
@@ -518,17 +541,22 @@ function LoginPage() {
             </button>
 
 
-            <p className="login-bottom-text">
+            {selectedRole !==
+              "admin" && (
 
-              Don't have an account?
+              <p className="login-bottom-text">
 
-              {" "}
+                Don't have an account?
 
-              <Link to="/signup">
-                Sign Up
-              </Link>
+                {" "}
 
-            </p>
+                <Link to="/signup">
+                  Sign Up
+                </Link>
+
+              </p>
+
+            )}
 
           </form>
 

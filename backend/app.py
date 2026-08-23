@@ -8,6 +8,7 @@ from flask_cors import CORS
 from config import Config
 
 from routes.auth_routes import auth_bp
+from routes.admin_routes import admin_bp
 from routes.authority_routes import authority_bp
 from routes.authority_dashboard_routes import authority_dashboard_bp
 from routes.employee_routes import employee_bp
@@ -75,6 +76,9 @@ def create_app() -> Flask:
     # Authentication
     app.register_blueprint(auth_bp)
 
+    # Administrator
+    app.register_blueprint(admin_bp)
+
     # Existing Community Authority RAG APIs
     app.register_blueprint(authority_bp)
 
@@ -124,6 +128,7 @@ def create_app() -> Flask:
                 "message": "ECO-LENS backend is running.",
                 "available_modules": [
                     "authentication",
+                    "admin",
                     "community_authority",
                     "authority_dashboard",
                     "authority_employee_invites",
@@ -148,6 +153,7 @@ def create_app() -> Flask:
                 "status": "healthy",
                 "modules": {
                     "authentication": "available",
+                    "admin": "available",
                     "community_authority": "available",
                     "authority_dashboard": "available",
                     "authority_employee_invites": "available",

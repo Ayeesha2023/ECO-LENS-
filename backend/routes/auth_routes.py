@@ -15,6 +15,11 @@ from repositories.login_repository import (
     get_login_user_by_id,
 )
 
+from repositories.admin_repository import (
+    authenticate_admin,
+    get_admin_by_id,
+)
+
 
 auth_bp = Blueprint(
     "auth",
@@ -197,19 +202,45 @@ def login():
 
     try:
 
-        user = authenticate_user(
-            email=payload.get(
-                "email"
-            ),
-
-            password=payload.get(
-                "password"
-            ),
-
-            requested_role=payload.get(
-                "role"
-            ),
+        requested_role = (
+            str(
+                payload.get(
+                    "role",
+                    ""
+                )
+            )
+            .strip()
+            .lower()
         )
+
+
+        if requested_role == "admin":
+
+            user = authenticate_admin(
+                email=payload.get(
+                    "email"
+                ),
+
+                password=payload.get(
+                    "password"
+                ),
+            )
+
+        else:
+
+            user = authenticate_user(
+                email=payload.get(
+                    "email"
+                ),
+
+                password=payload.get(
+                    "password"
+                ),
+
+                requested_role=payload.get(
+                    "role"
+                ),
+            )
 
 
         # Remove any old login session.
@@ -316,11 +347,26 @@ def current_user():
 
     try:
 
-        user = (
-            get_login_user_by_id(
-                int(user_id)
-            )
+        session_role = session.get(
+            "role"
         )
+
+
+        if session_role == "admin":
+
+            user = (
+                get_admin_by_id(
+                    int(user_id)
+                )
+            )
+
+        else:
+
+            user = (
+                get_login_user_by_id(
+                    int(user_id)
+                )
+            )
 
 
         if user is None:

@@ -23,6 +23,9 @@ import EmployeeDashboard
 import AuthorityDashboard
   from "./pages/AuthorityDashboard";
 
+import AdminDashboard
+  from "./pages/AdminDashboard";
+
 
 function App() {
   return (
@@ -79,6 +82,15 @@ function App() {
           path="/authority"
           element={
             <AuthorityDashboard />
+          }
+        />
+
+
+        {/* ADMIN DASHBOARD */}
+        <Route
+          path="/admin"
+          element={
+            <AdminDashboard />
           }
         />
 
