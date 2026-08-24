@@ -230,36 +230,69 @@ def get_cleanup_metrics(
     end_date: date,
 ) -> dict[str, Any]:
     """
-    Return cleanup totals.
+    Return verified cleanup totals for this authority.
 
-    Only authority-verified cleanup records are included.
+    The per-class breakdown is the canonical source for handling totals
+    because it is what the Employee completion workflow writes. Older
+    verified cleanup records without a class breakdown fall back to the
+    summary values stored on cleanup_records.
     """
 
     result = fetch_one(
         """
         SELECT
             COALESCE(
-                SUM(cr.total_waste_kg),
+                SUM(
+                    CASE
+                        WHEN cb.cleanup_id IS NOT NULL
+                            THEN cb.total_waste_kg
+                        ELSE cr.total_waste_kg
+                    END
+                ),
                 0
             ) AS total_waste_collected_kg,
 
             COALESCE(
-                SUM(cr.recycled_waste_kg),
+                SUM(
+                    CASE
+                        WHEN cb.cleanup_id IS NOT NULL
+                            THEN cb.recycled_waste_kg
+                        ELSE cr.recycled_waste_kg
+                    END
+                ),
                 0
             ) AS recycled_waste_kg,
 
             COALESCE(
-                SUM(cr.composted_waste_kg),
+                SUM(
+                    CASE
+                        WHEN cb.cleanup_id IS NOT NULL
+                            THEN cb.composted_waste_kg
+                        ELSE cr.composted_waste_kg
+                    END
+                ),
                 0
             ) AS composted_waste_kg,
 
             COALESCE(
-                SUM(cr.properly_disposed_kg),
+                SUM(
+                    CASE
+                        WHEN cb.cleanup_id IS NOT NULL
+                            THEN cb.properly_disposed_kg
+                        ELSE cr.properly_disposed_kg
+                    END
+                ),
                 0
             ) AS properly_disposed_kg,
 
             COALESCE(
-                SUM(cr.hazardous_waste_kg),
+                SUM(
+                    CASE
+                        WHEN cb.cleanup_id IS NOT NULL
+                            THEN cb.hazardous_waste_kg
+                        ELSE cr.hazardous_waste_kg
+                    END
+                ),
                 0
             ) AS hazardous_waste_kg,
 
@@ -273,6 +306,57 @@ def get_cleanup_metrics(
         JOIN task_assignments AS ta
             ON ta.assignment_id = cr.assignment_id
 
+        LEFT JOIN (
+            SELECT
+                ccb.cleanup_id,
+
+                SUM(ccb.weight_kg)
+                    AS total_waste_kg,
+
+                SUM(
+                    CASE
+                        WHEN ccb.handling_method = 'recycled'
+                            THEN ccb.weight_kg
+                        ELSE 0
+                    END
+                ) AS recycled_waste_kg,
+
+                SUM(
+                    CASE
+                        WHEN ccb.handling_method = 'composted'
+                            THEN ccb.weight_kg
+                        ELSE 0
+                    END
+                ) AS composted_waste_kg,
+
+                SUM(
+                    CASE
+                        WHEN ccb.handling_method IN (
+                            'special_collection',
+                            'controlled_disposal'
+                        )
+                            THEN ccb.weight_kg
+                        ELSE 0
+                    END
+                ) AS properly_disposed_kg,
+
+                SUM(
+                    CASE
+                        WHEN wc.category_code = 'HAZARDOUS'
+                            THEN ccb.weight_kg
+                        ELSE 0
+                    END
+                ) AS hazardous_waste_kg
+
+            FROM cleanup_class_breakdown AS ccb
+
+            JOIN waste_categories AS wc
+                ON wc.category_id = ccb.category_id
+
+            GROUP BY ccb.cleanup_id
+        ) AS cb
+            ON cb.cleanup_id = cr.cleanup_id
+
         WHERE ta.assigned_by_authority_id = %s
           AND cr.verification_status = 'verified'
           AND DATE(cr.cleaned_at) BETWEEN %s AND %s
@@ -285,7 +369,6 @@ def get_cleanup_metrics(
     )
 
     return result or {}
-
 
 def get_cleanup_category_breakdown(
     authority_id: int,
@@ -308,20 +391,20 @@ def get_cleanup_category_breakdown(
             wc.category_code,
             wc.category_name,
             COALESCE(
-                SUM(cwb.weight_kg),
+                SUM(ccb.weight_kg),
                 0
             ) AS weight_kg
 
-        FROM cleanup_waste_breakdown AS cwb
+        FROM cleanup_class_breakdown AS ccb
 
         JOIN cleanup_records AS cr
-            ON cr.cleanup_id = cwb.cleanup_id
+            ON cr.cleanup_id = ccb.cleanup_id
 
         JOIN task_assignments AS ta
             ON ta.assignment_id = cr.assignment_id
 
         JOIN waste_categories AS wc
-            ON wc.category_id = cwb.category_id
+            ON wc.category_id = ccb.category_id
 
         WHERE ta.assigned_by_authority_id = %s
           AND cr.verification_status = 'verified'
@@ -586,12 +669,14 @@ def create_authority_advice_run(
     request_uuid: str,
     requested_by_user_id: int,
     response_language: str = "en",
+    gemini_model: str | None = None,
+    prompt_version: str = "offline-rule-based-1.0",
 ) -> int:
     """
     Create a new advice-run record.
 
-    At this stage the system uses offline rule-based formatting,
-    so gemini_model is stored as NULL.
+    Offline callers can use the defaults unchanged. Gemini callers
+    can record the exact model and prompt version used for the run.
     """
 
     advice_run_id = execute(
@@ -614,8 +699,8 @@ def create_authority_advice_run(
             %s,
             %s,
             'processing',
-            NULL,
-            'offline-rule-based-1.0',
+            %s,
+            %s,
             %s
         )
         """,
@@ -625,6 +710,8 @@ def create_authority_advice_run(
             snapshot_id,
             request_uuid,
             requested_by_user_id,
+            gemini_model,
+            prompt_version,
             response_language,
         ),
     )
@@ -882,6 +969,69 @@ def get_authority_advice_history(
             authority_id,
             safe_limit,
         ),
+    )
+
+
+# ============================================================
+# AUTHORITY PROMPT TEMPLATE
+# ============================================================
+
+def get_active_authority_prompt_template(
+    language_code: str = "en",
+) -> dict[str, Any] | None:
+    """Return the newest active Authority system prompt template.
+
+    The database currently stores the Authority prompt as an English
+    system prompt. If a requested language-specific row is unavailable,
+    callers can fall back to the active English template.
+    """
+
+    language_code = str(language_code or "en").strip().lower()
+
+    row = fetch_one(
+        """
+        SELECT
+            prompt_template_id,
+            template_name,
+            template_version,
+            language_code,
+            system_prompt,
+            is_active,
+            created_at
+
+        FROM authority_prompt_templates
+
+        WHERE is_active = 1
+          AND language_code = %s
+
+        ORDER BY created_at DESC, prompt_template_id DESC
+        LIMIT 1
+        """,
+        (language_code,),
+    )
+
+    if row is not None or language_code == "en":
+        return row
+
+    return fetch_one(
+        """
+        SELECT
+            prompt_template_id,
+            template_name,
+            template_version,
+            language_code,
+            system_prompt,
+            is_active,
+            created_at
+
+        FROM authority_prompt_templates
+
+        WHERE is_active = 1
+          AND language_code = 'en'
+
+        ORDER BY created_at DESC, prompt_template_id DESC
+        LIMIT 1
+        """
     )
 
 

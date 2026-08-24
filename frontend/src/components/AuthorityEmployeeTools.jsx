@@ -48,11 +48,6 @@ function AuthorityEmployeeTools() {
   ] = useState([]);
 
   const [
-    pendingCleanups,
-    setPendingCleanups,
-  ] = useState([]);
-
-  const [
     loading,
     setLoading,
   ] = useState(true);
@@ -98,27 +93,13 @@ function AuthorityEmployeeTools() {
         setLoading(true);
         setError("");
 
-        const [
-          inviteResponse,
-          cleanupResponse,
-        ] =
-          await Promise.all([
-            apiRequest(
-              "/api/authority/employee-invites"
-            ),
-
-            apiRequest(
-              "/api/authority/cleanup-verification/pending"
-            ),
-          ]);
+        const inviteResponse =
+          await apiRequest(
+            "/api/authority/employee-invites"
+          );
 
         setInvites(
           inviteResponse.invites ||
-          []
-        );
-
-        setPendingCleanups(
-          cleanupResponse.cleanups ||
           []
         );
 
@@ -259,40 +240,6 @@ function AuthorityEmployeeTools() {
         const response =
           await apiRequest(
             `/api/authority/employee-invites/${inviteId}/revoke`,
-            {
-              method:
-                "POST",
-            }
-          );
-
-        setMessage(
-          response.message
-        );
-
-        await loadTools();
-
-      } catch (
-        requestError
-      ) {
-        setError(
-          requestError.message
-        );
-      }
-    };
-
-
-  const reviewCleanup =
-    async (
-      cleanupId,
-      decision
-    ) => {
-      try {
-        setMessage("");
-        setError("");
-
-        const response =
-          await apiRequest(
-            `/api/authority/cleanup-verification/${cleanupId}/${decision}`,
             {
               method:
                 "POST",
@@ -571,144 +518,6 @@ function AuthorityEmployeeTools() {
       </div>
 
 
-      {/* CLEANUP VERIFICATION */}
-      <article className="authority-tool-card">
-        <span className="authority-tool-eyebrow">
-          CLEANUP ANALYTICS CONTROL
-        </span>
-
-        <h3>
-          Verify Employee Cleanup Reports
-        </h3>
-
-        <p>
-          Employees report the amount and type
-          of waste they collected using EcoLens
-          model classes. These records stay
-          pending until this authority verifies
-          them. Your existing authority analytics
-          can then safely use verified cleanup
-          data.
-        </p>
-
-        <div className="authority-cleanup-list">
-          {pendingCleanups.length ===
-            0 && (
-            <div>
-              No cleanup reports are waiting
-              for verification.
-            </div>
-          )}
-
-          {pendingCleanups.map(
-            (cleanup) => (
-              <div
-                className="authority-cleanup-item"
-                key={
-                  cleanup.cleanup_id
-                }
-              >
-                <div className="authority-cleanup-item-top">
-                  <div>
-                    <strong>
-                      {
-                        cleanup.report_title
-                      }
-                    </strong>
-
-                    <span>
-                      Employee:
-                      {" "}
-                      {
-                        cleanup.employee_name
-                      }
-                    </span>
-                  </div>
-
-                  <strong>
-                    {
-                      Number(
-                        cleanup.total_waste_kg
-                      ).toFixed(2)
-                    }
-                    {" kg"}
-                  </strong>
-                </div>
-
-                <div className="authority-cleanup-breakdown">
-                  {
-                    (
-                      cleanup.waste_breakdown ||
-                      []
-                    ).map(
-                      (
-                        item,
-                        index
-                      ) => (
-                        <span
-                          key={
-                            `${item.model_class_id}-${index}`
-                          }
-                        >
-                          {
-                            item.class_name
-                          }
-                          :
-                          {" "}
-                          {
-                            Number(
-                              item.weight_kg
-                            ).toFixed(2)
-                          }
-                          {" kg"}
-                        </span>
-                      )
-                    )
-                  }
-                </div>
-
-                <span>
-                  Submitted:
-                  {" "}
-                  {
-                    formatDate(
-                      cleanup.cleaned_at
-                    )
-                  }
-                </span>
-
-                <div className="authority-cleanup-actions">
-                  <button
-                    type="button"
-                    className="primary-dashboard-button"
-                    onClick={() =>
-                      reviewCleanup(
-                        cleanup.cleanup_id,
-                        "verify"
-                      )
-                    }
-                  >
-                    Verify
-                  </button>
-
-                  <button
-                    type="button"
-                    className="secondary-dashboard-button"
-                    onClick={() =>
-                      reviewCleanup(
-                        cleanup.cleanup_id,
-                        "reject"
-                      )
-                    }
-                  >
-                    Reject
-                  </button>
-                </div>
-              </div>
-            )
-          )}
-        </div>
-      </article>
 
 
       {message && (

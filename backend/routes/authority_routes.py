@@ -15,6 +15,10 @@ from services.analytics_service import (
 from services.authority_rag_service import (
     generate_authority_advice_offline,
 )
+from services.authority_gemini_service import (
+    generate_authority_chat_reply,
+    generate_authority_gemini_advice,
+)
 
 
 # ============================================================
@@ -392,6 +396,135 @@ def generate_authority_advice(
             str(exc),
             500,
         )
+
+
+# ============================================================
+# GENERATE RAG + GEMINI AUTHORITY ADVICE
+# ============================================================
+
+@authority_bp.post(
+    "/<int:authority_id>/advice/gemini"
+)
+def generate_authority_gemini(
+    authority_id: int,
+):
+    """Generate grounded Authority recommendations with Gemini."""
+
+    try:
+        _validate_authority_id(authority_id)
+
+        payload = request.get_json(silent=True)
+
+        if payload is None or not isinstance(payload, dict):
+            raise ValueError(
+                "A JSON request body is required."
+            )
+
+        start_date = _parse_date(
+            payload.get("start_date"),
+            "start_date",
+        )
+        end_date = _parse_date(
+            payload.get("end_date"),
+            "end_date",
+        )
+        _validate_date_range(start_date, end_date)
+
+        language = str(
+            payload.get("language", "en")
+        ).strip().lower()
+
+        if language not in {"en", "bn"}:
+            raise ValueError(
+                "language must be 'en' or 'bn'."
+            )
+
+        result = generate_authority_gemini_advice(
+            authority_id=authority_id,
+            start_date=start_date,
+            end_date=end_date,
+            response_language=language,
+        )
+
+        return jsonify(
+            {
+                "success": True,
+                "message": (
+                    "Grounded Authority Gemini advice was "
+                    "generated successfully."
+                ),
+                **_json_safe_value(result),
+            }
+        ), 201
+
+    except (ValueError, TypeError) as exc:
+        return _error_response(str(exc), 400)
+
+    except Exception as exc:
+        return _error_response(str(exc), 500)
+
+
+# ============================================================
+# AUTHORITY GROUNDED FOLLOW-UP CHAT
+# ============================================================
+
+@authority_bp.post(
+    "/<int:authority_id>/advice/chat"
+)
+def authority_advice_chat(
+    authority_id: int,
+):
+    """Answer a follow-up question using the same Authority RAG context."""
+
+    try:
+        _validate_authority_id(authority_id)
+
+        payload = request.get_json(silent=True)
+
+        if payload is None or not isinstance(payload, dict):
+            raise ValueError(
+                "A JSON request body is required."
+            )
+
+        start_date = _parse_date(
+            payload.get("start_date"),
+            "start_date",
+        )
+        end_date = _parse_date(
+            payload.get("end_date"),
+            "end_date",
+        )
+        _validate_date_range(start_date, end_date)
+
+        language = str(
+            payload.get("language", "en")
+        ).strip().lower()
+
+        result = generate_authority_chat_reply(
+            authority_id=authority_id,
+            start_date=start_date,
+            end_date=end_date,
+            user_message=payload.get("message", ""),
+            response_language=language,
+            conversation_history=payload.get(
+                "conversation_history",
+                [],
+            ),
+            initial_result=payload.get("initial_result"),
+        )
+
+        return jsonify(
+            {
+                "success": True,
+                **_json_safe_value(result),
+            }
+        ), 200
+
+    except (ValueError, TypeError) as exc:
+        return _error_response(str(exc), 400)
+
+    except Exception as exc:
+        return _error_response(str(exc), 500)
 
 
 # ============================================================

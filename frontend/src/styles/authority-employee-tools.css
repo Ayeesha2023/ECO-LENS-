@@ -146,3 +146,161 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ==========================================================
+   DEDICATED CLEANUP VERIFICATION
+   ========================================================== */
+
+.authority-verification-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.authority-verification-summary .authority-tool-card h3 {
+  margin: 7px 0 4px;
+  font-size: 24px;
+}
+
+.authority-cleanup-review-card {
+  padding: 18px;
+}
+
+.authority-cleanup-total {
+  min-width: 110px;
+  text-align: right;
+}
+
+.authority-cleanup-total strong,
+.authority-cleanup-total span {
+  display: block;
+}
+
+.authority-cleanup-total strong {
+  color: #073b2a;
+  font-size: 18px;
+}
+
+.authority-cleanup-total span {
+  margin-top: 3px;
+  color: #6f8177;
+  font-size: 9px;
+}
+
+.authority-cleanup-meta-grid {
+  margin: 12px 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.authority-cleanup-meta-grid span {
+  padding: 9px 10px;
+  border-radius: 10px;
+  background: #f3f8f3;
+  color: #17633f;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.authority-major-category-list {
+  margin-top: 14px;
+}
+
+.authority-category-heading {
+  margin-bottom: 8px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.authority-category-heading strong {
+  color: #073b2a;
+  font-size: 12px;
+}
+
+.authority-category-heading span {
+  color: #6f8177;
+  font-size: 9px;
+}
+
+.authority-major-category-card {
+  margin-top: 8px;
+  padding: 11px 12px;
+  border: 1px solid rgba(7,59,42,.10);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.authority-major-category-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.authority-major-category-top strong {
+  color: #073b2a;
+  font-size: 11px;
+}
+
+.authority-major-category-top span {
+  color: #17633f;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.authority-category-warning {
+  padding: 11px;
+  border-radius: 10px;
+  background: #fff7e7;
+  color: #7d5b17;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.authority-cleanup-submitted {
+  display: block;
+  margin-top: 12px;
+  color: #6f8177;
+  font-size: 10px;
+}
+
+.authority-cleanup-notes {
+  margin: 8px 0 0;
+  padding: 10px;
+  border-radius: 10px;
+  background: #fafcf9;
+  color: #52675c;
+  font-size: 10px;
+}
+
+.authority-verification-empty {
+  text-align: center;
+}
+
+@media (max-width: 900px) {
+  .authority-verification-summary,
+  .authority-cleanup-meta-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .authority-verification-summary,
+  .authority-cleanup-meta-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .authority-cleanup-item-top,
+  .authority-category-heading {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .authority-cleanup-total {
+    text-align: left;
+  }
+}
