@@ -813,8 +813,9 @@ def generate_employee_advice_offline(
 
     if not detected_objects:
         raise ValueError(
-            "The completed detection contains no "
-            "active detected objects."
+            "No waste class could be detected from this image. "
+            "Please upload a clearer image where the waste objects "
+            "are clearly visible and try again."
         )
 
     # --------------------------------------------------------

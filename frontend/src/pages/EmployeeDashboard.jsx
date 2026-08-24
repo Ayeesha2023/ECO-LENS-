@@ -253,6 +253,31 @@ function EmployeeDashboard() {
   ] = useState("");
 
   const [
+    ragAdviceId,
+    setRagAdviceId,
+  ] = useState(null);
+
+  const [
+    detailedLoading,
+    setDetailedLoading,
+  ] = useState(false);
+
+  const [
+    detailedResult,
+    setDetailedResult,
+  ] = useState(null);
+
+  const [
+    detailedError,
+    setDetailedError,
+  ] = useState("");
+
+  const [
+    detailedLanguage,
+    setDetailedLanguage,
+  ] = useState("en");
+
+  const [
     completionOpen,
     setCompletionOpen,
   ] = useState(false);
@@ -417,6 +442,10 @@ function EmployeeDashboard() {
         setScanResult(null);
         setRagResult(null);
         setRagError("");
+        setRagAdviceId(null);
+        setDetailedResult(null);
+        setDetailedError("");
+        setDetailedLanguage("en");
 
       } catch (
         requestError
@@ -510,6 +539,9 @@ function EmployeeDashboard() {
         setRagError("");
         setScanResult(null);
         setRagResult(null);
+        setRagAdviceId(null);
+        setDetailedResult(null);
+        setDetailedError("");
 
         const formData =
           new FormData();
@@ -563,6 +595,11 @@ function EmployeeDashboard() {
           ragResponse
         );
 
+        setRagAdviceId(
+          ragResponse.advice_id ||
+          null
+        );
+
       } catch (
         requestError
       ) {
@@ -573,6 +610,62 @@ function EmployeeDashboard() {
       } finally {
         setScanLoading(false);
         setRagLoading(false);
+      }
+    };
+
+
+  // ========================================================
+  // OPTIONAL GEMINI-DETAILED GUIDANCE
+  // ========================================================
+
+  const getDetailedGuidance =
+    async () => {
+      if (
+        !data ||
+        !ragAdviceId
+      ) {
+        setDetailedError(
+          "Run the waste scan and Employee RAG guidance first."
+        );
+        return;
+      }
+
+      try {
+        setDetailedLoading(true);
+        setDetailedError("");
+        setDetailedResult(null);
+
+        const response =
+          await apiRequest(
+            `/api/employee/${data.employee.employee_id}/advice/${ragAdviceId}/detailed`,
+            {
+              method:
+                "POST",
+
+              body:
+                JSON.stringify(
+                  {
+                    language:
+                      detailedLanguage,
+                  }
+                ),
+            }
+          );
+
+        setDetailedResult(
+          response.result ||
+          null
+        );
+
+      } catch (
+        requestError
+      ) {
+        setDetailedError(
+          requestError.message
+        );
+
+      } finally {
+        setDetailedLoading(false);
       }
     };
 
@@ -1990,6 +2083,186 @@ function EmployeeDashboard() {
                             )
                           )
                         }
+
+                        <div className="employee-detailed-guidance-actions">
+                          <div>
+                            <strong>
+                              Need more detail?
+                            </strong>
+
+                            <span>
+                              Gemini will expand the existing
+                              YOLO + Employee RAG result.
+                            </span>
+                          </div>
+
+                          <select
+                            value={
+                              detailedLanguage
+                            }
+                            onChange={
+                              (event) => {
+                                setDetailedLanguage(
+                                  event.target.value
+                                );
+                                setDetailedResult(null);
+                                setDetailedError("");
+                              }
+                            }
+                            disabled={
+                              detailedLoading
+                            }
+                            aria-label="Detailed guidance language"
+                          >
+                            <option value="en">
+                              English
+                            </option>
+
+                            <option value="bn">
+                              বাংলা
+                            </option>
+                          </select>
+
+                          <button
+                            type="button"
+                            className="employee-primary-button employee-detailed-button"
+                            disabled={
+                              detailedLoading ||
+                              !ragAdviceId
+                            }
+                            onClick={
+                              getDetailedGuidance
+                            }
+                          >
+                            {
+                              detailedLoading
+                                ? "Getting Detailed Guidance..."
+                                : "Get More Detailed Guidance ✦"
+                            }
+                          </button>
+                        </div>
+
+                        {detailedError && (
+                          <div className="employee-error-message">
+                            {
+                              detailedError
+                            }
+                          </div>
+                        )}
+
+                        {detailedResult && (
+                          <section className="employee-gemini-result">
+                            <div className="employee-gemini-heading">
+                              <span>
+                                ✦ GEMINI + EMPLOYEE RAG
+                              </span>
+
+                              <strong>
+                                {
+                                  detailedResult.summary ||
+                                  "Detailed worker guidance prepared."
+                                }
+                              </strong>
+                            </div>
+
+                            {(
+                              detailedResult.guidance ||
+                              []
+                            ).map(
+                              (
+                                guidance,
+                                index
+                              ) => (
+                                <article
+                                  key={
+                                    `${guidance.model_class_id || guidance.class_name || index}`
+                                  }
+                                >
+                                  <h4>
+                                    {
+                                      guidance.display_name ||
+                                      guidance.class_name ||
+                                      `Guidance ${index + 1}`
+                                    }
+                                  </h4>
+
+                                  {guidance.overview && (
+                                    <p className="employee-gemini-overview">
+                                      {
+                                        guidance.overview
+                                      }
+                                    </p>
+                                  )}
+
+                                  {[
+                                    "ppe_requirements",
+                                    "site_preparation_steps",
+                                    "collection_steps",
+                                    "segregation_steps",
+                                    "handling_precautions",
+                                    "temporary_storage_steps",
+                                    "transport_steps",
+                                    "disposal_steps",
+                                    "prohibited_actions",
+                                    "emergency_actions",
+                                    "supervisor_or_verification_notes",
+                                  ].map(
+                                    (key) =>
+                                      Array.isArray(
+                                        guidance[key]
+                                      ) &&
+                                      guidance[key].length >
+                                        0 && (
+                                        <div
+                                          className="employee-rag-block"
+                                          key={
+                                            key
+                                          }
+                                        >
+                                          <strong>
+                                            {
+                                              label(
+                                                key
+                                              )
+                                            }
+                                          </strong>
+
+                                          <ul>
+                                            {
+                                              guidance[key].map(
+                                                (
+                                                  item,
+                                                  itemIndex
+                                                ) => (
+                                                  <li
+                                                    key={
+                                                      itemIndex
+                                                    }
+                                                  >
+                                                    {
+                                                      item
+                                                    }
+                                                  </li>
+                                                )
+                                              )
+                                            }
+                                          </ul>
+                                        </div>
+                                      )
+                                  )}
+                                </article>
+                              )
+                            )}
+
+                            {detailedResult.disclaimer && (
+                              <p className="employee-gemini-disclaimer">
+                                {
+                                  detailedResult.disclaimer
+                                }
+                              </p>
+                            )}
+                          </section>
+                        )}
                       </div>
                     )}
                   </section>

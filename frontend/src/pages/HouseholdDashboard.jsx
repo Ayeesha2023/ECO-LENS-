@@ -1,6 +1,7 @@
 import {
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
@@ -17,6 +18,7 @@ import {
 } from "../services/api";
 
 import "../styles/household-dashboard.css";
+import "../styles/household-chat.css";
 
 
 const menuItems = [
@@ -392,6 +394,39 @@ function HouseholdDashboard() {
 
 
   // ========================================================
+  // GROUNDED HOUSEHOLD FOLLOW-UP CHAT
+  // ========================================================
+
+  const [
+    currentAdviceId,
+    setCurrentAdviceId,
+  ] = useState(null);
+
+  const [
+    chatMessages,
+    setChatMessages,
+  ] = useState([]);
+
+  const [
+    chatInput,
+    setChatInput,
+  ] = useState("");
+
+  const [
+    chatLoading,
+    setChatLoading,
+  ] = useState(false);
+
+  const [
+    chatError,
+    setChatError,
+  ] = useState("");
+
+  const chatEndRef =
+    useRef(null);
+
+
+  // ========================================================
   // PUBLIC REPORT
   // ========================================================
 
@@ -546,6 +581,20 @@ function HouseholdDashboard() {
   );
 
 
+  useEffect(
+    () => {
+      chatEndRef.current
+        ?.scrollIntoView({
+          behavior: "smooth",
+        });
+    },
+    [
+      chatMessages,
+      chatLoading,
+    ]
+  );
+
+
   const activeReports =
     useMemo(
       () => {
@@ -600,6 +649,10 @@ function HouseholdDashboard() {
       setDetectionResult(null);
       setAdviceResult(null);
       setDetectionMessage("");
+      setCurrentAdviceId(null);
+      setChatMessages([]);
+      setChatInput("");
+      setChatError("");
     };
 
 
@@ -621,6 +674,10 @@ function HouseholdDashboard() {
         setDetectionMessage("");
         setDetectionResult(null);
         setAdviceResult(null);
+        setCurrentAdviceId(null);
+        setChatMessages([]);
+        setChatInput("");
+        setChatError("");
 
         const formData =
           new FormData();
@@ -694,8 +751,49 @@ function HouseholdDashboard() {
           adviceResponse.advice ||
           adviceResponse;
 
+        const generatedAdviceId =
+          adviceResponse.advice_id ||
+          adviceResponse.result
+            ?.advice_id ||
+          null;
+
         setAdviceResult(
           result
+        );
+
+        setCurrentAdviceId(
+          generatedAdviceId
+        );
+
+        const initialSummary =
+          result?.summary ||
+          result?.result
+            ?.summary ||
+          "EcoLens prepared grounded guidance for the detected waste.";
+
+        const initialMode =
+          result?.mode ||
+          result?.result
+            ?.mode ||
+          adviceResponse.mode ||
+          null;
+
+        const initialSourceText =
+          initialMode ===
+          "gemini_grounded"
+            ? "I generated the initial advice using the YOLO detection and verified EcoLens RAG context."
+            : "The initial advice is currently using the grounded offline fallback because Gemini was unavailable.";
+
+        setChatMessages(
+          [
+            {
+              role:
+                "assistant",
+
+              content:
+                `${initialSummary} ${initialSourceText} You can ask me follow-up questions about this detection.`,
+            },
+          ]
         );
 
         setDetectionMessage(
@@ -715,6 +813,142 @@ function HouseholdDashboard() {
         setDetectionLoading(
           false
         );
+      }
+    };
+
+
+  // ========================================================
+  // HOUSEHOLD FOLLOW-UP CHAT
+  // ========================================================
+
+  const sendChatMessage =
+    async (
+      event = null
+    ) => {
+      event?.preventDefault();
+
+      const message =
+        chatInput.trim();
+
+      if (!message) {
+        return;
+      }
+
+      if (
+        !detectionResult
+          ?.detection_session_id
+      ) {
+        setChatError(
+          "Complete a waste detection before using the follow-up chat."
+        );
+
+        return;
+      }
+
+      if (!currentAdviceId) {
+        setChatError(
+          "The initial Household advice is not available for follow-up questions."
+        );
+
+        return;
+      }
+
+      const previousMessages =
+        chatMessages.slice(-10);
+
+      const userMessage = {
+        role:
+          "user",
+
+        content:
+          message,
+      };
+
+      setChatMessages(
+        (previous) => [
+          ...previous,
+          userMessage,
+        ]
+      );
+
+      setChatInput("");
+      setChatError("");
+
+      try {
+        setChatLoading(true);
+
+        const response =
+          await apiRequest(
+            `/api/household/${data.household.user_id}/chat`,
+            {
+              method:
+                "POST",
+
+              body:
+                JSON.stringify(
+                  {
+                    detection_session_id:
+                      detectionResult
+                        .detection_session_id,
+
+                    advice_id:
+                      currentAdviceId,
+
+                    message:
+                      message,
+
+                    language:
+                      "en",
+
+                    history:
+                      previousMessages
+                        .map(
+                          (
+                            chatMessage
+                          ) => ({
+                            role:
+                              chatMessage.role,
+
+                            content:
+                              chatMessage.content,
+                          })
+                        ),
+                  }
+                ),
+            }
+          );
+
+        setChatMessages(
+          (previous) => [
+            ...previous,
+
+            {
+              role:
+                "assistant",
+
+              content:
+                response.answer,
+
+              groundingNote:
+                response.grounding_note,
+
+              localVerificationRequired:
+                response
+                  .local_verification_required,
+            },
+          ]
+        );
+
+      } catch (
+        requestError
+      ) {
+        setChatError(
+          requestError.message ||
+          "The follow-up question could not be answered."
+        );
+
+      } finally {
+        setChatLoading(false);
       }
     };
 
@@ -1603,7 +1837,7 @@ function HouseholdDashboard() {
                 <div className="household-result-heading">
                   <div>
                     <span>
-                      HOUSEHOLD RAG GUIDANCE
+                      GEMINI + GROUNDED RAG GUIDANCE
                     </span>
 
                     <h2>
@@ -1689,6 +1923,14 @@ function HouseholdDashboard() {
                           )}
                         </div>
 
+                        {item.overview && (
+                          <p className="household-guidance-overview">
+                            {
+                              item.overview
+                            }
+                          </p>
+                        )}
+
                         <GuidanceList
                           title="Immediate Action"
                           items={
@@ -1744,6 +1986,27 @@ function HouseholdDashboard() {
                             item.recycling_opportunities
                           }
                         />
+
+                        <GuidanceList
+                          title="Benefits of Proper Disposal"
+                          items={
+                            item.benefits_of_proper_disposal
+                          }
+                        />
+
+                        <GuidanceList
+                          title="Consequences of Improper Disposal"
+                          items={
+                            item.harms_of_improper_disposal
+                          }
+                        />
+
+                        <GuidanceList
+                          title="Environmental Notes"
+                          items={
+                            item.environmental_notes
+                          }
+                        />
                       </article>
                     )
                   )}
@@ -1775,6 +2038,253 @@ function HouseholdDashboard() {
                 )}
               </section>
             )}
+          </div>
+        )}
+
+
+        {/* ==================================================
+            GROUNDED FOLLOW-UP CHAT
+            ================================================== */}
+
+        {activeSection ===
+          "detect" &&
+          adviceResult &&
+          detectionResult &&
+          currentAdviceId && (
+          <div className="household-section household-chat-section-wrap">
+            <section className="household-chat-section">
+              <div className="household-chat-heading">
+                <div>
+                  <span>
+                    ASK ECOLENS
+                  </span>
+
+                  <h2>
+                    Follow-up Waste Guidance
+                  </h2>
+
+                  <p>
+                    Ask questions about the
+                    waste detected in this
+                    photo. Answers remain
+                    grounded in the same
+                    EcoLens RAG, safety and
+                    facility information used
+                    for your initial guidance.
+                  </p>
+                </div>
+
+                <div className="household-chat-status">
+                  <span className="household-chat-status-dot" />
+
+                  Gemini + Grounded RAG
+                </div>
+              </div>
+
+              <div className="household-chat-context">
+                <strong>
+                  Current detection
+                </strong>
+
+                <div>
+                  {(detectionResult
+                    .detected_objects ||
+                    [])
+                    .map(
+                      (
+                        object,
+                        index
+                      ) => (
+                        <span
+                          key={
+                            `${object.model_class_id}-${index}`
+                          }
+                        >
+                          {
+                            object.class_name
+                          }
+                        </span>
+                      )
+                    )}
+                </div>
+
+                <small>
+                  Start a new waste
+                  detection if you want
+                  to ask about a different
+                  image.
+                </small>
+              </div>
+
+              <div className="household-chat-window">
+                {chatMessages.map(
+                  (
+                    message,
+                    index
+                  ) => (
+                    <div
+                      className={
+                        `household-chat-row ${
+                          message.role ===
+                          "user"
+                            ? "household-chat-row-user"
+                            : "household-chat-row-assistant"
+                        }`
+                      }
+                      key={
+                        `${message.role}-${index}`
+                      }
+                    >
+                      <div className="household-chat-avatar">
+                        {
+                          message.role ===
+                          "user"
+                            ? household
+                                .full_name
+                                ?.charAt(0)
+                                ?.toUpperCase() ||
+                              "U"
+                            : "E"
+                        }
+                      </div>
+
+                      <div className="household-chat-message-wrap">
+                        <span className="household-chat-role">
+                          {
+                            message.role ===
+                            "user"
+                              ? "You"
+                              : "EcoLens"
+                          }
+                        </span>
+
+                        <div className="household-chat-bubble">
+                          {
+                            message.content
+                          }
+                        </div>
+
+                        {message.groundingNote && (
+                          <small className="household-chat-grounding-note">
+                            {
+                              message.groundingNote
+                            }
+                          </small>
+                        )}
+                      </div>
+                    </div>
+                  )
+                )}
+
+                {chatLoading && (
+                  <div className="household-chat-row household-chat-row-assistant">
+                    <div className="household-chat-avatar">
+                      E
+                    </div>
+
+                    <div className="household-chat-message-wrap">
+                      <span className="household-chat-role">
+                        EcoLens
+                      </span>
+
+                      <div className="household-chat-bubble household-chat-typing">
+                        <span />
+                        <span />
+                        <span />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div
+                  ref={
+                    chatEndRef
+                  }
+                />
+              </div>
+
+              {chatError && (
+                <div className="household-chat-error">
+                  {chatError}
+                </div>
+              )}
+
+              <form
+                className="household-chat-composer"
+                onSubmit={
+                  sendChatMessage
+                }
+              >
+                <textarea
+                  rows="2"
+                  maxLength="1500"
+                  placeholder="Ask a follow-up question about the detected waste..."
+                  value={
+                    chatInput
+                  }
+                  onChange={
+                    (event) =>
+                      setChatInput(
+                        event
+                          .target
+                          .value
+                      )
+                  }
+                  onKeyDown={
+                    (event) => {
+                      if (
+                        event.key ===
+                          "Enter" &&
+                        !event.shiftKey
+                      ) {
+                        event.preventDefault();
+
+                        sendChatMessage();
+                      }
+                    }
+                  }
+                  disabled={
+                    chatLoading
+                  }
+                />
+
+                <button
+                  type="submit"
+                  disabled={
+                    chatLoading ||
+                    !chatInput.trim()
+                  }
+                >
+                  {
+                    chatLoading
+                      ? "Thinking..."
+                      : "Send"
+                  }
+
+                  {!chatLoading && (
+                    <span>
+                      →
+                    </span>
+                  )}
+                </button>
+              </form>
+
+              <div className="household-chat-footer-note">
+                <span>
+                  ✦
+                </span>
+
+                <p>
+                  EcoLens uses the current
+                  detection and verified
+                  Household RAG context for
+                  this conversation. Confirm
+                  local disposal availability
+                  whenever the guidance says
+                  verification is required.
+                </p>
+              </div>
+            </section>
           </div>
         )}
 

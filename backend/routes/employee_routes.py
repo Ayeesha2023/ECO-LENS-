@@ -13,6 +13,9 @@ from repositories.employee_repository import (
 from services.employee_rag_service import (
     generate_employee_advice_offline,
 )
+from services.employee_gemini_service import (
+    generate_employee_detailed_guidance,
+)
 
 
 # ============================================================
@@ -306,6 +309,131 @@ def generate_employee_advice(
     except Exception as exc:
         return _error_response(
             str(exc),
+            500,
+        )
+
+
+# ============================================================
+# GENERATE OPTIONAL GEMINI-DETAILED EMPLOYEE GUIDANCE
+# ============================================================
+
+@employee_bp.post(
+    "/<int:employee_id>/advice/<int:advice_id>/detailed"
+)
+def generate_detailed_employee_advice(
+    employee_id: int,
+    advice_id: int,
+):
+    """
+    Expand an already-generated Employee RAG result with Gemini.
+
+    Gemini receives the saved Employee RAG result and detected
+    classes. It does not rerun YOLO or replace the RAG stage.
+
+    Example JSON body:
+
+    {
+        "language": "en"
+    }
+    """
+
+    try:
+        employee_id = _validate_positive_integer(
+            employee_id,
+            "employee_id",
+        )
+
+        advice_id = _validate_positive_integer(
+            advice_id,
+            "advice_id",
+        )
+
+        payload = request.get_json(
+            silent=True
+        ) or {}
+
+        if not isinstance(
+            payload,
+            dict,
+        ):
+            raise ValueError(
+                "The JSON request body must be an object."
+            )
+
+        language = payload.get(
+            "language",
+            "en",
+        )
+
+        if not isinstance(
+            language,
+            str,
+        ):
+            raise ValueError(
+                "language must be a string."
+            )
+
+        language = (
+            language
+            .strip()
+            .lower()
+        )
+
+        if language not in {
+            "en",
+            "bn",
+        }:
+            raise ValueError(
+                "language must be 'en' or 'bn'."
+            )
+
+        detailed = (
+            generate_employee_detailed_guidance(
+                employee_id=employee_id,
+                advice_id=advice_id,
+                response_language=language,
+            )
+        )
+
+        return jsonify(
+            {
+                "success": True,
+                "message": (
+                    "More detailed Employee guidance was "
+                    "generated successfully."
+                ),
+                **_json_safe_value(
+                    detailed
+                ),
+            }
+        ), 200
+
+    except ValueError as exc:
+        return _error_response(
+            str(exc),
+            400,
+        )
+
+    except TypeError as exc:
+        return _error_response(
+            str(exc),
+            400,
+        )
+
+    except RuntimeError as exc:
+        return _error_response(
+            str(exc),
+            502,
+        )
+
+    except Exception as exc:
+        print(
+            "Employee detailed Gemini guidance error:",
+            exc,
+        )
+
+        return _error_response(
+            "Detailed Employee guidance could not be generated.",
             500,
         )
 

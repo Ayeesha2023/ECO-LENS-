@@ -216,3 +216,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# EcoLens local/runtime files
+backend/models/best.pt
+backend/uploads/

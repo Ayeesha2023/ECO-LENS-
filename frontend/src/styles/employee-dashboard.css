@@ -1006,3 +1006,117 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ==========================================================
+   OPTIONAL GEMINI-DETAILED EMPLOYEE GUIDANCE
+   ========================================================== */
+
+.employee-detailed-guidance-actions {
+  margin-top: 14px;
+  padding: 14px;
+  display: grid;
+  grid-template-columns: minmax(0,1fr) auto auto;
+  gap: 10px;
+  align-items: center;
+  border: 1px solid var(--emp-border);
+  border-radius: 12px;
+  background: white;
+}
+
+.employee-detailed-guidance-actions strong,
+.employee-detailed-guidance-actions span {
+  display: block;
+}
+
+.employee-detailed-guidance-actions strong {
+  color: var(--emp-deep);
+  font-size: 11px;
+}
+
+.employee-detailed-guidance-actions span {
+  margin-top: 3px;
+  color: var(--emp-muted);
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.employee-detailed-guidance-actions select {
+  min-height: 39px;
+  padding: 0 10px;
+  border: 1px solid var(--emp-border);
+  border-radius: 10px;
+  background: white;
+  color: var(--emp-green);
+  font: inherit;
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.employee-detailed-button {
+  white-space: nowrap;
+}
+
+.employee-gemini-result {
+  margin-top: 14px;
+  padding: 15px;
+  border: 1px solid var(--emp-border);
+  border-radius: 14px;
+  background: #f2f8ee;
+}
+
+.employee-gemini-heading span,
+.employee-gemini-heading strong {
+  display: block;
+}
+
+.employee-gemini-heading span {
+  color: var(--emp-accent);
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: .08em;
+}
+
+.employee-gemini-heading strong {
+  margin-top: 5px;
+  color: var(--emp-deep);
+  font-size: 12px;
+}
+
+.employee-gemini-result article {
+  margin-top: 11px;
+  padding: 13px;
+  border: 1px solid var(--emp-border);
+  border-radius: 11px;
+  background: white;
+}
+
+.employee-gemini-result h4 {
+  margin: 0 0 7px;
+}
+
+.employee-gemini-overview {
+  margin: 0 0 8px;
+  color: var(--emp-muted);
+  font-size: 10px;
+  line-height: 1.55;
+}
+
+.employee-gemini-disclaimer {
+  margin: 12px 0 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--emp-border);
+  color: var(--emp-muted);
+  font-size: 9px;
+  line-height: 1.55;
+}
+
+@media (max-width: 760px) {
+  .employee-detailed-guidance-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .employee-detailed-guidance-actions select,
+  .employee-detailed-button {
+    width: 100%;
+  }
+}

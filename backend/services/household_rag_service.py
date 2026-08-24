@@ -1144,8 +1144,9 @@ def generate_household_advice_offline(
 
     if not detected_rows:
         raise ValueError(
-            "The detection session contains no "
-            "recognised waste objects."
+            "No waste class could be detected from this image. "
+            "Please upload a clearer image where the waste objects "
+            "are clearly visible and try again."
         )
 
     region_id_value = household.get(
